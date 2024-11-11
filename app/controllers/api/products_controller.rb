@@ -3,7 +3,11 @@ module Api
     def import
       raise NoImportFileError unless params[:import_file].present?
 
-      import_file_content = JSON(params[:import_file])
+      ProductsImporterService.import(
+        JSON(
+          params[:import_file].read
+        )
+      )
 
       render json: import_file_content, status: 200
     rescue NoImportFileError => e
