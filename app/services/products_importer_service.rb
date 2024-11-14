@@ -1,10 +1,62 @@
 class ProductsImporterService
   class << self
     def import(collection)
-      binding.pry
-      collection.each_slice(collection.size / 5) do |chunk| # 5 is the number of sidekiq threads, should be parametrized
-        ImportProductsJob.perform_async(chunk)
+      collection = sanitize_data(collection)
+
+      to_update = {}
+      prods = Product
+        .where(compound_key: collection.map { |_, e| e['compound_key'] })
+      
+      if prods.present?
+        prods.each do |p|
+          to_update[p.id] = collection[p.compound_key]
+        end
       end
+
+      if to_update.present?
+        to_update.values.each_slice(to_update.size / 10) do |chunk|
+          UpdateProductJob.perform_async(chunk)
+        end
+      end
+
+      to_update.each do |_, u|
+        collection.delete u['compound_key']
+      end
+
+      if collection.present?
+        collection.values.each_slice(collection.size / 10) do |chunk|
+          Product.import chunk
+          # ImportProductsJob.perform_async(chunk.flatten)
+        end
+      end
+    end
+
+    def sanitize_data(collection)
+      exclusion_regex = /(\ *BE(\ +|$)|\ *NL(\ +|$)|\ *PT(\ +|$)|\ *FR(\ +|$)|\ *DE(\ +|$))/i
+
+      sanitized = {}
+      collection.each do |entry|
+        e = {
+          'country' => entry['country']&.gsub(exclusion_regex, ''),
+          'product_id' => entry['sku'],
+          'shop_name' =>
+            entry['site']&.gsub(exclusion_regex, '') || entry['marketplaceseller'].gsub(exclusion_regex, ''),
+
+          'brand' => entry['brand']&.gsub(exclusion_regex, ''),
+          'model' => entry['model']&.gsub(exclusion_regex, ''),
+          'product_category_id' => entry['categoryId'],
+          'price' => entry['price'],
+          'url' => entry['url'],
+          'compound_key' =>
+            "#{(entry['site'] || entry['marketplaceseller']).upcase&.gsub(exclusion_regex, '')}" \
+            "#{(entry['country']).upcase&.gsub(exclusion_regex, '')}" \
+            "#{entry['sku']}",
+        }
+
+        sanitized[e['compound_key']] = e
+      end
+
+      sanitized
     end
   end
 end

@@ -4,11 +4,13 @@ services:
     container_name: consumer-api-postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    command: "postgres -c 'max_connections=500'"
+    command: "postgres -c 'max_connections=250'"
     environment:
       - POSTGRES_DB=consumer-apidb
       - DB_USERNAME=deco
       - DB_PASSWORD=deco
+      - POSTGRES_INITDB_ARGS='--encoding=UTF-8 --lc-collate=UTF-8 --lc-ctype=UTF-8'
+
     ports:
       - "5432:5432"
 

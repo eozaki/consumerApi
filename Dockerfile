@@ -41,4 +41,4 @@ COPY --chown=deco:deco app $APP_PATH/app
 
 EXPOSE 3000
 
-CMD [ "bundle exec rails db:prepare; bundle exec rails s -p 3000 -b 0.0.0.0" ]
+ENTRYPOINT [ "/home/deco/consumer-api/entrypoint" ]

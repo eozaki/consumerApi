@@ -5,13 +5,15 @@ module Api
 
       ProductsImporterService.import(
         JSON(
-          params[:import_file].read
+          params[:import_file].read.force_encoding('UTF-8')
         )
       )
 
-      render json: import_file_content, status: 200
+      render json: :ok
     rescue NoImportFileError => e
       render json: e.message, status: :bad_request
+    rescue => e
+      render json: e.message, status: :internal_server_error
     end
   end
 end
