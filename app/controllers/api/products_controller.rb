@@ -3,11 +3,7 @@ module Api
     def import
       raise NoImportFileError unless params[:import_file].present?
 
-      ProductsImporterService.import(
-        JSON(
-          params[:import_file].read.force_encoding('UTF-8')
-        )
-      )
+      ProductsImporterService.import(params[:import_file])
 
       render json: :ok
     rescue NoImportFileError => e

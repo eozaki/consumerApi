@@ -1,7 +1,7 @@
 class ProductsImporterService
   class << self
-    def import(collection)
-      collection = sanitize_data(collection)
+    def import(file)
+      collection = sanitize_data(JSON(file.read.encode('UTF-8', 'ISO-8859-1')))
 
       to_update = {}
       prods = Product
@@ -14,7 +14,7 @@ class ProductsImporterService
       end
 
       if to_update.present?
-        to_update.values.each_slice(to_update.size / 10) do |chunk|
+        to_update.to_a.each_slice(to_update.size / 5) do |chunk|
           UpdateProductJob.perform_async(chunk)
         end
       end
@@ -24,9 +24,8 @@ class ProductsImporterService
       end
 
       if collection.present?
-        collection.values.each_slice(collection.size / 10) do |chunk|
-          Product.import chunk
-          # ImportProductsJob.perform_async(chunk.flatten)
+        collection.values.each_slice(collection.size / 5) do |chunk|
+          ImportProductsJob.perform_async(chunk.flatten)
         end
       end
     end
