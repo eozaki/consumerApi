@@ -9,13 +9,11 @@ class CreateProducts < ActiveRecord::Migration[7.0]
       t.string :product_category_id
       t.decimal :price, precision: 10, scale: 2
       t.string :url
-      t.string :compound_key
 
       t.timestamps
 
     end
 
     add_index :products, [:country, :product_id, :shop_name], unique: true
-    add_index :products, :compound_key, unique: true
   end
 end

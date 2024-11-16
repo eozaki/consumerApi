@@ -23,10 +23,8 @@ ActiveRecord::Schema[7.0].define(version: 2024_11_10_174014) do
     t.string "product_category_id"
     t.decimal "price", precision: 10, scale: 2
     t.string "url"
-    t.string "compound_key"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["compound_key"], name: "index_products_on_compound_key", unique: true
     t.index ["country", "product_id", "shop_name"], name: "index_products_on_country_and_product_id_and_shop_name", unique: true
   end
 
