@@ -3,34 +3,14 @@ class ProductsImporterService
     def import(file)
       collection = sanitize_data(JSON(file.read.encode('UTF-8', 'ISO-8859-1')))
 
-      to_update = {}
-      prods = Product
-        .where(compound_key: collection.map { |_, e| e['compound_key'] })
-      
-      if prods.present?
-        prods.each do |p|
-          to_update[p.id] = collection[p.compound_key]
-        end
-      end
-
-      if to_update.present?
-        to_update.to_a.each_slice(to_update.size / 5) do |chunk|
-          UpdateProductJob.perform_async(chunk)
-        end
-      end
-
-      to_update.each do |_, u|
-        collection.delete u['compound_key']
-      end
-
-      if collection.present?
-        collection.values.each_slice(collection.size / 5) do |chunk|
-          ImportProductsJob.perform_async(chunk.flatten)
-        end
+      collection.values.each_slice(collection.size / 5) do |chunk|
+        ImportProductsJob.perform_async(chunk)
       end
     end
 
     def sanitize_data(collection)
+      # This Regex could be something like a class constant,
+      # but it is only used in here and specifically in the process of sanitizing data
       exclusion_regex = /(\ *BE(\ +|$)|\ *NL(\ +|$)|\ *PT(\ +|$)|\ *FR(\ +|$)|\ *DE(\ +|$))/i
 
       sanitized = {}
